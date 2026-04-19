@@ -3,79 +3,89 @@
 #include <map>
 #include "tstack.h"
 int getPriority(const char ch) {
-  if (ch == '(') return 0;
-  else if (ch == ')') return 1;
-  else if (ch == '+' || ch == '-') return 2;
-  else if (ch == '*' || ch == '/') return 3;
-  else throw "Incorrect character";
+  if (ch == '(') { return 0; }
+  else if (ch == ')') { return 1; }
+  else if (ch == '+' || ch == '-') { return 2; }
+  else if (ch == '*' || ch == '/') { return 3; }
+  else { return -1; }
 }
 std::string infx2pstfx(const std::string& inf) {
   TStack<char, 100> opStack;
-  int idx = 0;
-  std::string output;
-  while (idx < static_cast<int>(inf.length())) {
-    if (inf[idx] >= '0' && inf[idx] <= '9') {
-      while (idx < static_cast<int>(inf.length()) &&
-             inf[idx] >= '0' && inf[idx] <= '9') {
-        output += inf[idx++];
+  int pos = 0;
+  std::string result;
+  while (pos < static_cast<int>(inf.size())) {
+    // Пропускаем пробелы
+    if (inf[pos] == ' ') { ++pos; continue; }
+
+    if (inf[pos] >= '0' && inf[pos] <= '9') {
+      while (pos < static_cast<int>(inf.size()) &&
+             inf[pos] >= '0' && inf[pos] <= '9') {
+        result.push_back(inf[pos++]);
       }
-      output += ' ';
+      result.push_back(' ');
       continue;
     }
-    int pr = getPriority(inf[idx]);
-    if (pr == 0) {
-      opStack.push(inf[idx]);
-    } else if (pr == 1) {
+    int priority = getPriority(inf[pos]);
+    if (priority == 0) {
+      opStack.push(inf[pos]);  // '('
+    } else if (priority == 1) {
+      // ')' — выгружаем до '('
       while (!opStack.isEmpty() && getPriority(opStack.get()) != 0) {
-        output += opStack.get(); output += ' ';
+        result.push_back(opStack.get());
+        result.push_back(' ');
         opStack.pop();
       }
-      if (!opStack.isEmpty()) opStack.pop();
-    } else if (pr > 1) {
-      if (opStack.isEmpty() || pr > getPriority(opStack.get())) {
-        opStack.push(inf[idx]);
+      if (!opStack.isEmpty()) { opStack.pop(); }
+    } else if (priority > 1) {
+
+      if (opStack.isEmpty() || priority > getPriority(opStack.get())) {
+        opStack.push(inf[pos]);
       } else {
         while (!opStack.isEmpty() && opStack.get() != '(' &&
-               pr <= getPriority(opStack.get())) {
-          output += opStack.get(); output += ' ';
+               priority <= getPriority(opStack.get())) {
+          result.push_back(opStack.get());
+          result.push_back(' ');
           opStack.pop();
         }
-        opStack.push(inf[idx]);
+        opStack.push(inf[pos]);
       }
     }
-    ++idx;
+    ++pos;
   }
   while (!opStack.isEmpty()) {
-    output += opStack.get();
-    if (opStack.getSize() != 1) output += ' ';
+    result.push_back(opStack.get());
+    if (opStack.getSize() != 1) { result.push_back(' '); }
     opStack.pop();
   }
-
-  return output;
+  return result;
 }
 int eval(const std::string& post) {
   TStack<int, 100> valStack;
-  int idx = 0;
-  while (idx < static_cast<int>(post.length())) {
-    if (post[idx] >= '0' && post[idx] <= '9') {
+  int pos = 0;
+  while (pos < static_cast<int>(post.size())) {
+    // Пропускаем пробелы
+    if (post[pos] == ' ') { ++pos; continue; }
+    if (post[pos] >= '0' && post[pos] <= '9') {
       std::string token;
-      while (idx < static_cast<int>(post.length()) && post[idx] != ' ') {
-        token += post[idx++];
+      while (pos < static_cast<int>(post.size()) &&
+             post[pos] >= '0' && post[pos] <= '9') {
+        token.push_back(post[pos++]);
       }
-      ++idx;
       valStack.push(std::stoi(token));
       continue;
     }
-    char op = post[idx];
-    int rhs = valStack.get(); valStack.pop();
-    int lhs = valStack.get(); valStack.pop();
-    int result = 0;
-    if (op == '+') result = lhs + rhs;
-    else if (op == '-') result = lhs - rhs;
-    else if (op == '*') result = lhs * rhs;
-    else if (op == '/') result = lhs / rhs;
-    valStack.push(result);
-    ++idx;
+    char oper = post[pos++];
+    int right = valStack.get(); valStack.pop();
+    int left = valStack.get(); valStack.pop();
+    int computed = 0;
+    switch (oper) {
+      case '+': computed = left + right; break;
+      case '-': computed = left - right; break;
+      case '*': computed = left * right; break;
+      case '/': computed = left / right; break;
+      default: break;
+    }
+    valStack.push(computed);
   }
   return valStack.get();
 }
