@@ -2,105 +2,80 @@
 #include <string>
 #include <map>
 #include "tstack.h"
-int checkPr(const char ch) {
-    if (ch == '(')
-        return 0;
-    else if (ch == ')')
-        return 1;
-    else if (ch == '+' || ch == '-')
-        return 2;
-    else if (ch == '*' || ch == '/')
-        return 3;
-    else
-        throw "Incorrect character";
+int getPriority(const char ch) {
+  if (ch == '(') return 0;
+  else if (ch == ')') return 1;
+  else if (ch == '+' || ch == '-') return 2;
+  else if (ch == '*' || ch == '/') return 3;
+  else throw "Incorrect character";
 }
 std::string infx2pstfx(const std::string& inf) {
-    TStack<char, 100> stack1;
-    int i = 0;
-    std::string res;
-    while (i < inf.length()) {
-        if (inf[i] >= '0' && inf[i] <= '9') {
-            while (inf[i] >= '0' && inf[i] <= '9') {
-                res += inf[i];
-                i++;
-            }
-            res += ' ';
-            continue;
-        }
-        if (checkPr(inf[i]) == 0) {
-            stack1.push(inf[i]);
-        }
-        else if (checkPr(inf[i]) == 1) {
-            while (!stack1.isEmpty() && checkPr(stack1.top()) != 0) {
-                res += stack1.top();
-                res += ' ';
-                stack1.pop();
-            }
-            stack1.pop();
-        }
-        else if (checkPr(inf[i]) > 1) {
-            if (stack1.isEmpty() || checkPr(inf[i]) > checkPr(stack1.top())) {
-                stack1.push(inf[i]);
-            }
-            else {
-                while (!stack1.isEmpty() &&
-                       stack1.top() != '(' &&
-                       checkPr(inf[i]) <= checkPr(stack1.top())) {
-                    res += stack1.top();
-                    res += ' ';
-                    stack1.pop();
-                }
-                stack1.push(inf[i]);
-            }
-        }
-        i++;
+  TStack<char, 100> opStack;
+  int idx = 0;
+  std::string output;
+
+  while (idx < static_cast<int>(inf.length())) {
+    if (inf[idx] >= '0' && inf[idx] <= '9') {
+      while (idx < static_cast<int>(inf.length()) &&
+             inf[idx] >= '0' && inf[idx] <= '9') {
+        output += inf[idx++];
+      }
+      output += ' ';
+      continue;
     }
-    while (!stack1.isEmpty()) {
-        res += stack1.top();
-        if (stack1.getSize() != 1)
-            res += ' ';
-        stack1.pop();
+    int pr = getPriority(inf[idx]);
+    if (pr == 0) {
+      opStack.push(inf[idx]);
+    } else if (pr == 1) {
+      while (!opStack.isEmpty() && getPriority(opStack.top()) != 0) {
+        output += opStack.top(); output += ' ';
+        opStack.pop();
+      }
+      if (!opStack.isEmpty()) opStack.pop();
+    } else if (pr > 1) {
+      if (opStack.isEmpty() || pr > getPriority(opStack.top())) {
+        opStack.push(inf[idx]);
+      } else {
+        while (!opStack.isEmpty() && opStack.top() != '(' &&
+               pr <= getPriority(opStack.top())) {
+          output += opStack.top(); output += ' ';
+          opStack.pop();
+        }
+        opStack.push(inf[idx]);
+      }
     }
-    return res;
+    ++idx;
+  }
+  while (!opStack.isEmpty()) {
+    output += opStack.top();
+    if (opStack.getSize() != 1) output += ' ';
+    opStack.pop();
+  }
+  return output;
 }
-int eval(const std::string& pref) {
-    TStack<int, 100> stack2;
-    int res = 0, i = 0;
-    while (i < pref.length()) {
-        if (pref[i] >= '0' && pref[i] <= '9') {
-            std::string num;
-            while (pref[i] != ' ') {
-                num += pref[i];
-                i++;
-            }
-            i++;
-            stack2.push(std::stoi(num));
-            continue;
-        }
-        if (pref[i] == '+') {
-            res = stack2.top(); stack2.pop();
-            res += stack2.top(); stack2.pop();
-            stack2.push(res);
-        }
-        else if (pref[i] == '-') {
-            res = stack2.top(); stack2.pop();
-            res = stack2.top() - res; stack2.pop();
-            stack2.push(res);
-        }
-        else if (pref[i] == '*') {
-            res = stack2.top(); stack2.pop();
-            res *= stack2.top(); stack2.pop();
-            stack2.push(res);
-        }
-        else if (pref[i] == '/') {
-            res = stack2.top(); stack2.pop();
-            res = stack2.top() / res; stack2.pop();
-            stack2.push(res);
-        }
-
-        res = 0;
-        i += 2;
+int eval(const std::string& post) {
+  TStack<int, 100> valStack;
+  int idx = 0;
+  while (idx < static_cast<int>(post.length())) {
+    if (post[idx] >= '0' && post[idx] <= '9') {
+      std::string token;
+      while (idx < static_cast<int>(post.length()) && post[idx] != ' ') {
+        token += post[idx++];
+      }
+      ++idx;
+      valStack.push(std::stoi(token));
+      continue;
     }
-
-    return stack2.top();
+    char op = post[idx];
+    int rhs = valStack.top(); valStack.pop();
+    int lhs = valStack.top(); valStack.pop();
+    int result = 0;
+    if (op == '+') result = lhs + rhs;
+    else if (op == '-') result = lhs - rhs;
+    else if (op == '*') result = lhs * rhs;
+    else if (op == '/') result = lhs / rhs;
+    valStack.push(result);
+    ++idx;
+  }
+  return valStack.top();
 }
