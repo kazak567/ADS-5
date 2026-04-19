@@ -13,7 +13,6 @@ std::string infx2pstfx(const std::string& inf) {
   TStack<char, 100> opStack;
   int idx = 0;
   std::string output;
-
   while (idx < static_cast<int>(inf.length())) {
     if (inf[idx] >= '0' && inf[idx] <= '9') {
       while (idx < static_cast<int>(inf.length()) &&
@@ -27,18 +26,18 @@ std::string infx2pstfx(const std::string& inf) {
     if (pr == 0) {
       opStack.push(inf[idx]);
     } else if (pr == 1) {
-      while (!opStack.isEmpty() && getPriority(opStack.top()) != 0) {
-        output += opStack.top(); output += ' ';
+      while (!opStack.isEmpty() && getPriority(opStack.get()) != 0) {
+        output += opStack.get(); output += ' ';
         opStack.pop();
       }
       if (!opStack.isEmpty()) opStack.pop();
     } else if (pr > 1) {
-      if (opStack.isEmpty() || pr > getPriority(opStack.top())) {
+      if (opStack.isEmpty() || pr > getPriority(opStack.get())) {
         opStack.push(inf[idx]);
       } else {
-        while (!opStack.isEmpty() && opStack.top() != '(' &&
-               pr <= getPriority(opStack.top())) {
-          output += opStack.top(); output += ' ';
+        while (!opStack.isEmpty() && opStack.get() != '(' &&
+               pr <= getPriority(opStack.get())) {
+          output += opStack.get(); output += ' ';
           opStack.pop();
         }
         opStack.push(inf[idx]);
@@ -47,10 +46,11 @@ std::string infx2pstfx(const std::string& inf) {
     ++idx;
   }
   while (!opStack.isEmpty()) {
-    output += opStack.top();
+    output += opStack.get();
     if (opStack.getSize() != 1) output += ' ';
     opStack.pop();
   }
+
   return output;
 }
 int eval(const std::string& post) {
@@ -67,8 +67,8 @@ int eval(const std::string& post) {
       continue;
     }
     char op = post[idx];
-    int rhs = valStack.top(); valStack.pop();
-    int lhs = valStack.top(); valStack.pop();
+    int rhs = valStack.get(); valStack.pop();
+    int lhs = valStack.get(); valStack.pop();
     int result = 0;
     if (op == '+') result = lhs + rhs;
     else if (op == '-') result = lhs - rhs;
@@ -77,5 +77,5 @@ int eval(const std::string& post) {
     valStack.push(result);
     ++idx;
   }
-  return valStack.top();
+  return valStack.get();
 }
